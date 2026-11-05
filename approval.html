@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CCSJDM | Create Class Schedule & Room Requests</title>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        body{min-height:100vh;background:#f3f4f6;color:#1f2937;font-family:"Segoe UI",Tahoma,Arial,sans-serif;display:flex}
+        
+        /* Sidebar Navigation */
+        .sidebar{width:260px;background:#0e1738;color:#fff;padding:24px 16px;display:flex;flex-direction:column;justify-content:space-between;flex-shrink:0}
+        .brand{display:flex;align-items:center;gap:12px;margin-bottom:32px;padding:0 8px}
+        .brand-avatar{width:40px;height:40px;border-radius:50%;background:#3b82f6;color:#fff;display:grid;place-items:center;font-weight:700}
+        .brand-title{font-size:1.1rem;font-weight:700}
+        .brand-sub{font-size:.75rem;color:#9ca3af}
+        .menu-label{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;margin:18px 8px 8px}
+        .nav{display:flex;flex-direction:column;gap:4px}
+        .nav-item{display:flex;align-items:center;padding:12px 14px;border-radius:10px;color:#9ca3af;text-decoration:none;font-weight:600;font-size:.9rem;transition:all .2s}
+        .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+        .nav-item.active{background:#2563eb;color:#fff}
+
+        /* Main Content Area */
+        .content{flex:1;padding:32px;overflow-y:auto}
+        .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+        .header-title h1{font-size:1.8rem;font-weight:700;color:#111827}
+        .header-title p{color:#6b7280;font-size:.9rem;margin-top:4px}
+        .semester-tag{background:#e0e7ff;color:#3730a3;padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600}
+
+        /* Layout Grid para sa Form at Live Check */
+        .schedule-layout{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+        @media(max-width:1024px){.schedule-layout{grid-template-columns:1fr}}
+
+        .card{background:#fff;border-radius:16px;border:1px solid #e5e7eb;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,.02)}
+        .card-title{font-weight:700;font-size:1.15rem;color:#111827;margin-bottom:20px}
+        
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+        .field{margin-bottom:16px}
+        .field.full{grid-column:1 / -1}
+        label{display:block;font-size:.78rem;font-weight:700;color:#4b5563;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+        input, select{width:100%;padding:12px 14px;border:1px solid #d1d5db;border-radius:10px;outline:none;font-size:.95rem;color:#1f2937;background:#fff;transition:border-color .2s}
+        input:focus, select:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+
+        .submit-btn{width:100%;padding:14px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s}
+        .submit-btn:hover{background:#1d4ed8}
+
+        /* Right Panel: Live Room Check */
+        .live-check-box{background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:20px}
+        .live-check-title{font-weight:700;color:#991b1b;font-size:.9rem;margin-bottom:4px}
+        .live-check-desc{font-size:.82rem;color:#7f1d1d}
+
+        .free-room-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+        .free-room-name{font-weight:700;font-size:.9rem;color:#111827}
+        .free-room-cap{font-size:.78rem;color:#6b7280}
+        .free-badge{background:#dcfce7;color:#166534;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:700}
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div>
+    <div class="brand">
+      <div class="brand-avatar">CS</div>
+      <div>
+        <div class="brand-title">Class Scheduler</div>
+        <div class="brand-sub">Dean & Program Chairs</div>
+      </div>
+    </div>
+
+    <div class="menu-label">MENU</div>
+    <nav class="nav">
+      <a href="main.html" class="nav-item">Dashboard</a>
+      <a href="main.html" class="nav-item">Room Availability</a>
+      <a href="approval.html" class="nav-item active">Create Schedule</a>
+      <a href="approval.html" class="nav-item">Room Requests</a>
+    </nav>
+  </div>
+
+  <div class="user-profile" style="padding:12px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-weight:700;font-size:.88rem" id="navName">Admin / Editor</div>
+      <div style="font-size:.75rem;color:#9ca3af">Active Session</div>
+    </div>
+    <button onclick="localStorage.removeItem('ccsjdm_session');location.replace('login.html')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-weight:700;font-size:.8rem">Logout</button>
+  </div>
+</aside>
+
+<main class="content">
+  <div class="header-row">
+    <div class="header-title">
+      <h1>Create Class Schedule</h1>
+      <p>Add a class and pick a room. We check for conflicts first.</p>
+    </div>
+    <div class="semester-tag">A.Y. 2026-2027 · 1st Semester</div>
+  </div>
+
+  <div class="schedule-layout">
+    <!-- Left Column: Form -->
+    <div class="card">
+      <div class="card-title">Class details</div>
+      <form id="createSchedForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" placeholder="e.g. IT 301 · Web Systems" required>
+          </div>
+          <div class="field">
+            <label for="section">Section</label>
+            <input type="text" id="section" placeholder="e.g. BSIT 3A" required>
+          </div>
+          <div class="field">
+            <label for="instructor">Instructor</label>
+            <input type="text" id="instructor" placeholder="e.g. Prof. Dela Cruz" required>
+          </div>
+          <div class="field">
+            <label for="program">Program</label>
+            <select id="program" required>
+              <option value="BS Information Technology">BS Information Technology</option>
+              <option value="BSEMC">BSEMC</option>
+              <option value="TOURISM">TOURISM</option>
+              <option value="CRIMINOLOGY">CRIMINOLOGY</option>
+              <option value="EDUC">EDUC</option>
+              <option value="PSYCHOLOGY">PSYCHOLOGY</option>
+              <option value="BSMA">BSMA</option>
+              <option value="BEN">BEN</option>
+              <option value="HUMANISTA">HUMANISTA</option>
+              <option value="SOCIAL WORK">SOCIAL WORK</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card-title" style="margin-top:10px;">Schedule</div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="day">Day</label>
+            <select id="day" required>
+              <option value="Monday">Monday</option>
+              <option value="Tuesday">Tuesday</option>
+              <option value="Wednesday">Wednesday</option>
+              <option value="Thursday">Thursday</option>
+              <option value="Friday">Friday</option>
+              <option value="Saturday">Saturday</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="startTime">Start time</label>
+            <input type="text" id="startTime" placeholder="9:00 AM" required>
+          </div>
+          <div class="field full">
+            <label for="endTime">End time</label>
+            <input type="text" id="endTime" placeholder="10:30 AM" required>
+          </div>
+        </div>
+
+        <div class="card-title" style="margin-top:10px;">Room</div>
+        <div class="field">
+          <label for="roomSelect">Room</label>
+          <select id="roomSelect" required>
+            <!-- 2nd Floor (201-210) -->
+            <optgroup label="2nd Floor Rooms">
+              <option value="Room 201">Room 201 · Capacity 40</option>
+              <option value="Room 202">Room 202 · Capacity 40</option>
+              <option value="Room 203">Room 203 · Capacity 40</option>
+              <option value="Room 204">Room 204 · Capacity 40</option>
+              <option value="Room 205">Room 205 · Capacity 40</option>
+              <option value="Room 206">Room 206 · Capacity 40</option>
+              <option value="Room 207">Room 207 · Capacity 40</option>
+              <option value="Room 208">Room 208 · Capacity 40</option>
+              <option value="Room 209">Room 209 · Capacity 40</option>
+              <option value="Room 210">Room 210 · Capacity 40</option>
+            </optgroup>
+
+            <!-- 3rd Floor (301-310) -->
+            <optgroup label="3rd Floor Rooms">
+              <option value="Room 301">Room 301 · Capacity 40</option>
+              <option value="Room 302">Room 302 · Capacity 40</option>
+              <option value="Room 303">Room 303 · Capacity 40</option>
+              <option value="Room 304">Room 304 · Capacity 40</option>
+              <option value="Room 305">Room 305 · Capacity 40</option>
+              <option value="Room 306">Room 306 · Capacity 40</option>
+              <option value="Room 307">Room 307 · Capacity 40</option>
+              <option value="Room 308">Room 308 · Capacity 40</option>
+              <option value="Room 309">Room 309 · Capacity 40</option>
+              <option value="Room 310">Room 310 · Capacity 40</option>
+            </optgroup>
+
+            <!-- 4th Floor (401-410) -->
+            <optgroup label="4th Floor Rooms">
+              <option value="Room 401">Room 401 · Capacity 40</option>
+              <option value="Room 402">Room 402 · Capacity 40</option>
+              <option value="Room 403">Room 403 · Capacity 40</option>
+              <option value="Room 404">Room 404 · Capacity 40</option>
+              <option value="Room 405">Room 405 · Capacity 40</option>
+              <option value="Room 406">Room 406 · Capacity 40</option>
+              <option value="Room 407">Room 407 · Capacity 40</option>
+              <option value="Room 408">Room 408 · Capacity 40</option>
+              <option value="Room 409">Room 409 · Capacity 40</option>
+              <option value="Room 410">Room 410 · Capacity 40</option>
+            </optgroup>
+
+            <!-- 5th Floor (501-510) -->
+            <optgroup label="5th Floor Rooms">
+              <option value="Room 501">Room 501 · Capacity 40</option>
+              <option value="Room 502">Room 502 · Capacity 40</option>
+              <option value="Room 503">Room 503 · Capacity 40</option>
+              <option value="Room 504">Room 504 · Capacity 40</option>
+              <option value="Room 505">Room 505 · Capacity 40</option>
+              <option value="Room 506">Room 506 · Capacity 40</option>
+              <option value="Room 507">Room 507 · Capacity 40</option>
+              <option value="Room 508">Room 508 · Capacity 40</option>
+              <option value="Room 509">Room 509 · Capacity 40</option>
+              <option value="Room 510">Room 510 · Capacity 40</option>
+            </optgroup>
+
+            <!-- Laboratories -->
+            <optgroup label="Laboratories">
+              <option value="Computer Lab 2">Computer Lab 2 · Capacity 30</option>
+              <option value="Computer Lab 3">Computer Lab 3 · Capacity 30</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <button type="submit" class="submit-btn" style="margin-top:16px;">Save & Request Schedule</button>
+      </form>
+    </div>
+
+    <!-- Right Column: Live Room Check -->
+    <div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:12px;">Live room check</div>
+        
+        <div class="live-check-box">
+          <div class="live-check-title">Room 201 is already booked</div>
+          <div class="live-check-desc">Mon 9:00-10:30 AM · BSBA 1B<br>Booked first by BSBA · Prof. Reyes</div>
+        </div>
+
+        <div style="font-weight:700;font-size:.9rem;color:#111827;margin-bottom:12px;">Free rooms for this time</div>
+
+        <div class="free-room-card">
+          <div>
+            <div class="free-room-name">Room 202</div>
+            <div class="free-room-cap">Capacity 40</div>
+          </div>
+          <span class="free-badge">Free</span>
+        </div>
+
+        <div class="free-room-card">
+          <div>
+            <div class="free-room-name">Room 305</div>
+            <div class="free-room-cap">Capacity 40</div>
+          </div>
+          <span class="free-badge">Free</span>
+        </div>
+
+        <div class="free-room-card">
+          <div>
+            <div class="free-room-name">Room 401</div>
+            <div class="free-room-cap">Capacity 40</div>
+          </div>
+          <span class="free-badge">Free</span>
+        </div>
+
+        <div class="free-room-card">
+          <div>
+            <div class="free-room-name">Computer Lab 2</div>
+            <div class="free-room-cap">Capacity 30</div>
+          </div>
+          <span class="free-badge">Free</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+document.getElementById('createSchedForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert("Matagumpay na naidagdag ang Class Schedule!");
+    this.reset();
+});
+</script>
+
+</body>
+</html>
